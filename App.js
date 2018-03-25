@@ -10,20 +10,25 @@ import {
     StyleSheet,
     Image,
     Text,
-    View
+    View,
+ListView,
 } from 'react-native';
 import TabNavigator from 'react-native-tab-navigator';
 import Boy from './Boy';
 //应该新版已经过期，所以需要另外导入Navigator
 import { Navigator }
     from 'react-native-deprecated-custom-components';
-
+import ListViewTest from './ListViewTest';
+import FetchTest from './FetchTest';
+import HomeTabNavigator from './HomeTabNavigator';
+import setup from './js/pages/setup';
 const instructions = Platform.select({
     ios: 'Press Cmd+R to reload,\n' +
         'Cmd+D or shake for dev menu',
     android: 'Double tap R on your keyboard to reload,\n' +
         'Shake or press menu button for dev menu',
 });
+
 
 export default class App extends Component {
     constructor(props) {
@@ -80,9 +85,9 @@ export default class App extends Component {
                         onPress={() => this.setState({selectedTab: 'tb_my'})}>
                         <View style={styles.page2}></View>
                     </TabNavigator.Item>
-                </TabNavigator>
-                 */}
-                {/***/}<Navigator
+                </TabNavigator>*/}
+
+                {/**<Navigator
                     initialRoute={{
                         component: Boy
                     }}
@@ -91,7 +96,15 @@ export default class App extends Component {
                         return <Component navigator={navigator}{...route.params} />
                     }}
                 >
-                </Navigator>
+                </Navigator>*/}
+
+                {/*<ListViewTest/>*/}
+
+                {/*<FetchTest/>*/}
+
+                {/*<HomeTabNavigator/>*/}
+
+                <setup/>
             </View>
         );
     }
