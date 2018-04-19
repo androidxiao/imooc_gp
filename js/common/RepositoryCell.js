@@ -10,7 +10,7 @@ import {
     TouchableOpacity,
     DeviceEventEmitter,
 } from 'react-native';
-import Toast, {DURATION} from 'react-native-easy-toast';
+
 export default class RepositoryCell extends Component {
 
     constructor(props) {
@@ -27,6 +27,7 @@ export default class RepositoryCell extends Component {
     }
 
     setFavoriteState(isFavorite){
+        this.props.projectModel.isFavorite=isFavorite;
         this.setState({
             isFavorite: isFavorite,
             favoriteIcon: isFavorite ? require('../../res/images/ic_star.png') : require('../../res/images/ic_unstar_transparent.png')
@@ -43,15 +44,14 @@ export default class RepositoryCell extends Component {
 
     render() {
         let item=this.props.projectModel.item?this.props.projectModel.item:this.props.projectModel;
-
-        let favoriteBtn=<TouchableOpacity
+        let favoriteBtn=this.props.projectModel.item?<TouchableOpacity
             onPress={()=>this.onPressFavorite()}
         >
             <Image
                 style={{width: 22, height: 22,tintColor:'#2196f3'}}
                 source={this.state.favoriteIcon}
             />
-            </TouchableOpacity>;
+            </TouchableOpacity>:null;
 
         return <TouchableOpacity
             onPress={this.props.onSelect}

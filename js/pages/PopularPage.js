@@ -10,35 +10,36 @@ import {
     View,
     ListView,
     RefreshControl,
-DeviceEventEmitter,
+    DeviceEventEmitter,
+    TouchableOpacity
 } from 'react-native';
 import NavigationBar from '../../NavigationBar';
 import ScrollableTabView, {ScrollableTabBar}from 'react-native-scrollable-tab-view';
 import HomePage from './HomePage';
-import DataRepository,{FLAG_STORAGE} from '../expand/dao/DataRepository';
+import DataRepository, {FLAG_STORAGE} from '../expand/dao/DataRepository';
 import RepositoryCell from '../common/RepositoryCell';
-import LanguageDao,{FLAG_LANGUAGE} from '../expand/dao/LanguageDao';
+import LanguageDao, {FLAG_LANGUAGE} from '../expand/dao/LanguageDao';
 import FavoriteDao from '../expand/dao/FavoriteDao';
 import RepositoryDetail from'./RepositoryDetail';
 import ProjectModel from '../model/ProjectModel';
 import Utils from '../utils/Utils';
+import SearchPage from './SearchPage';
+import ActionUtils from '../utils/ActionUtils';
 
 const URL = 'https://api.github.com/search/repositories?q=';
 const QUERY_STR = '&sort=stars';
-var favoriteDao=new FavoriteDao(FLAG_STORAGE.flag_popular);
+var favoriteDao = new FavoriteDao(FLAG_STORAGE.flag_popular);
 export default class PopularPage extends Component {
 
-    constructor(props){
+    constructor(props) {
         super(props);
-        this.languageDao=new LanguageDao(FLAG_LANGUAGE.flag_key);
-        this.state=({
-            dataArray:[],
-        })
+        this.languageDao = new LanguageDao(FLAG_LANGUAGE.flag_key);
+        this.state = ({
+            dataArray: [],
+        }),
+            this.loadData();
     }
 
-    componentDidMount(){
-        this.loadData();
-    }
 
     loadData() {
         this.languageDao.fetch()
@@ -51,8 +52,30 @@ export default class PopularPage extends Component {
         })
     }
 
+    renderRightButton(){
+        return <View>
+        <TouchableOpacity
+        onPress={()=>{
+            this.props.navigator.push({
+                component:SearchPage,
+                params:{
+                    ...this.props
+                }
+            })
+        }}
+        >
+        <View style={{padding:5,marginLeft:15}}>
+            <Image 
+            style={{width:24,height:24}}
+            source={require('../../res/images/ic_search_white_48pt.png')}/>
+        </View>
+        </TouchableOpacity>
+        </View>
+    }
+
+
     render() {
-        let content=this.state.dataArray.length>0?
+        let content = this.state.dataArray.length > 0 ?
             <ScrollableTabView
                 tabBarBackgroundColor='#2196f3'
                 tabBarInactiveTextColor='mintcream'
@@ -61,20 +84,20 @@ export default class PopularPage extends Component {
                 renderTabBar={()=><ScrollableTabBar/>}
             >
 
-                {this.state.dataArray.map((result,i,arr)=>{
-                    let len=arr[i];
-                    return len.checked?<PopularTab key={i} tabLabel={len.name} {...this.props}/>:null;
+                {this.state.dataArray.map((result, i, arr)=> {
+                    let len = arr[i];
+                    return len.checked ? <PopularTab key={i} tabLabel={len.name} {...this.props}/> : null;
                 })}
 
-            </ScrollableTabView>:null;
+            </ScrollableTabView> : null;
         return <View style={styles.container}>
             <NavigationBar
                 title={'最热'}
                 statusBar={{
                     backgroundColor: '#2196f3',
                 }}
-
-            />
+                leftButton={this.renderRightButton()}
+            /> 
 
             {content}
 
@@ -86,56 +109,82 @@ class PopularTab extends Component {
     constructor(props) {
         super(props);
         this.dataRepository = new DataRepository(FLAG_STORAGE.flag_popular);
+        this.isFavoriteChanged=false;
         this.state = ({
             result: '',
             dataSource: new ListView.DataSource({rowHasChanged: (row1, row2)=>row1 !== row2}),
             isLoading: false,
-            favoriteKeys:[],
+            favoriteKeys: [],
         })
     }
 
     componentDidMount() {
         this.loadData();
+        this.listener=DeviceEventEmitter.addListener('favoriteChanged_popular',()=>{
+            this.isFavoriteChanged=true;
+        })
+    }
+
+    componentWillUnmount(){
+        if(this.listener){
+            this.listener.remove();
+        }
     }
 
     getUrl() {
         return URL + this.props.tabLabel + QUERY_STR;
     }
 
+    componentWillReceiveProps(){
+        if(this.isFavoriteChanged){
+            this.isFavoriteChanged=false;
+            this.getFavoriteKeys();
+        }
+    }
+
+    // componentWillReceiveProps(nextProps){
+    //     if(this.isFavoriteChanged) {
+    //         this.isFavoriteChanged=false;
+    //         this.getFavoriteKeys();
+    //     }else{
+    //         this.flushFavoriteState()
+    //     }
+    // }
+
     /**
      * 更新Project Item收藏的状态
      */
-    flushFavoriteState(){
-        let projectModel=[];
-        let items=this.items;
-        for(let i=0,len=items.length;i<len;i++){
-            projectModel.push(new ProjectModel(items[i],Utils.checkFavorite(items[i],this.state.favoriteKeys)));
+    flushFavoriteState() {
+        let projectModel = [];
+        let items = this.items;
+        for (let i = 0, len = items.length; i < len; i++) {
+            projectModel.push(new ProjectModel(items[i], Utils.checkFavorite(items[i], this.state.favoriteKeys)));
         }
         this.updateState({
-            isLoading:false,
-            dataSource:this.getDataSource(projectModel)
+            isLoading: false,
+            dataSource: this.getDataSource(projectModel)
         })
     }
 
-    getDataSource(items){
+    getDataSource(items) {
         return this.state.dataSource.cloneWithRows(items);
     }
 
-    getFavoriteKeys(){
+    getFavoriteKeys() {
         favoriteDao.getFavoriteKeys()
-            .then(keys=>{
-                if(keys){
-                    this.updateState({favoriteKeys:keys})
+            .then(keys=> {
+                if (keys) {
+                    this.updateState({favoriteKeys: keys})
                 }
                 this.flushFavoriteState();
-            }).catch(e=>{
-                this.flushFavoriteState();
+            }).catch(e=> {
+            this.flushFavoriteState();
         });
     }
 
-    updateState(dic){
-        if(!this){
-         return;
+    updateState(dic) {
+        if (!this) {
+            return;
         }
 
         this.setState(dic);
@@ -143,39 +192,24 @@ class PopularTab extends Component {
 
 
     loadData() {
-        this.setState({
+        this.updateState({
             isLoading: true
         })
         let url = this.getUrl();
         this.dataRepository.fetchRepository(url)
             .then(result=> {
-                this.items=result&&result.items?result.items:result?result:[];
-                // this.setState({
-                //     // result:JSON.stringify(result),
-                //     dataSource: this.state.dataSource.cloneWithRows(items),
-                //     isLoading: false,
-                // });
-                // this.flushFavoriteState();
+                this.items = result && result.items ? result.items : result ? result : [];
                 this.getFavoriteKeys();
-                if(result&&result.update_date&&!this.dataRepository.checkDate(result.update_date)){
-                    DeviceEventEmitter.emit('showToast','数据过时');
+                if (result && result.update_date && !Utils.checkDate(result.update_date)) {
                     return this.dataRepository.fetchNetRepository(url);
-                }else{
-                    DeviceEventEmitter.emit('showToast','显示缓存数据');
                 }
             })
-            .then(items=>{
-                if(!items||items.length===0){
+            .then(items=> {
+                if (!items || items.length === 0) {
                     return;
                 }
-                this.items=items;
-                // this.flushFavoriteState();
+                this.items = items;
                 this.getFavoriteKeys();
-                // this.setState({
-                //     dataSource:this.state.dataSource.cloneWithRows(items),
-                // })
-                DeviceEventEmitter.emit('showToast','显示网络数据');
-
             })
             .catch(error=> {
                 // this.setState({
@@ -183,33 +217,23 @@ class PopularTab extends Component {
                 // });
 
                 this.updateState({
-                    isLoading:false,
+                    isLoading: false,
+                    result:JSON.stringify(error)
                 })
                 console.log(error);
             });
     }
 
-    onSelect(projectModel){
+    onSelect(projectModel) {
         this.props.navigator.push({
-            component:RepositoryDetail,
-            params:{
-                projectModel:projectModel,
+            title:projectModel.item.full_name,
+            component: RepositoryDetail,
+            params: {
+                projectModel: projectModel,
+                flag:FLAG_STORAGE.flag_popular,
                 ...this.props,
             }
         })
-    }
-
-    /**
-     * favoriteIcon的单击回调函数
-     * @param item
-     * @param isFavorite
-     */
-    onFavorite(item,isFavorite){
-        if(isFavorite){
-            favoriteDao.saveFavoriteItem(item.id.toString(),JSON.stringify(item))
-        }else{
-            favoriteDao.removeFavoriteItem(item.id.toString());
-        }
     }
 
     renderRow(projectModel) {
@@ -218,7 +242,7 @@ class PopularTab extends Component {
             onSelect={()=>this.onSelect(projectModel)}
             key={projectModel.item.id}
             projectModel={projectModel}
-            onFavorite={(item,isFavorite)=>this.onFavorite(item,isFavorite)}
+            onFavorite={(item, isFavorite)=>ActionUtils.onFavorite(this.favoriteDao,item, isFavorite,FLAG_STORAGE.flag_popular)}
         />
     }
 

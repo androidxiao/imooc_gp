@@ -19,7 +19,6 @@ import LanguageDao, {FLAG_LANGUAGE} from '../../expand/dao/LanguageDao';
 import CheckBox from 'react-native-check-box';
 import ArrayUtils from '../../utils/ArrayUtils';
 export default class CustomKeyPage extends Component {
-
     constructor(props) {
         super(props);
         this.isRemoveKey=this.props.isRemoveKey?true:false;
@@ -46,16 +45,16 @@ export default class CustomKeyPage extends Component {
     }
 
     onSave() {
-       if(this.changeValues.length===0){
-           this.props.navigator.pop();
-           return;
-       }
-       if(this.isRemoveKey) {
-           for (let i = 0, len = this.changeValues.length; i < len; i++) {
-               ArrayUtils.remove(this.state.dataArray, this.changeValues[i]);
-           }
-       }
-       this.languageDao.save(this.state.dataArray)
+        if(this.changeValues.length===0){
+            this.props.navigator.pop();
+            return;
+        }
+        if(this.isRemoveKey) {
+            for (let i = 0, len = this.changeValues.length; i < len; i++) {
+                ArrayUtils.remove(this.state.dataArray, this.changeValues[i]);
+            }
+        }
+        this.languageDao.save(this.state.dataArray)
         this.props.navigator.pop();
     }
 
@@ -90,17 +89,18 @@ export default class CustomKeyPage extends Component {
 
     onClick(data) {
         if(!this.isRemoveKey)
-        data.checked=!data.checked;
+            data.checked=!data.checked;
         ArrayUtils.updateArray(this.changeValues,data);
     }
 
     renderCheckBox(data) {
         let leftText = data.name;
+        let isChecked=this.isRemoveKey?false:data.checked;
         return (
             <CheckBox
                 style={{flex: 1,padding:10}}
                 onClick={()=>this.onClick(data)}
-                isChecked={data.checked}
+                isChecked={isChecked}
                 leftText={leftText}
                 checkedImage={<Image style={{tintColor:'#6495ed'}} source={require('./images/ic_check_box.png')}/>}
                 unCheckedImage={<Image style={{tintColor:'#6495ed'}} source={require('./images/ic_check_box_outline_blank.png')}/>}
@@ -122,7 +122,7 @@ export default class CustomKeyPage extends Component {
 
     render() {
         let title=this.isRemoveKey?'标签移除':'自定义标签';
-        title=this.props.flag===FLAG_LANGUAGE.flag_language?'自定义语言':'自定义标签';
+        title=this.props.flag===FLAG_LANGUAGE.flag_language?'自定义语言':title;
         let rightButtonTitle=this.isRemoveKey?'移除':'保存';
         let rightButton = <TouchableOpacity
             onPress={()=>this.onSave()}
@@ -133,16 +133,17 @@ export default class CustomKeyPage extends Component {
         </TouchableOpacity>
         return <View style={styles.container}>
             <NavigationBar
-                title={title}
-                style={{backgroundColor: '#6495ed'}}
-                leftButton={ViewUtils.getLeftButton(()=> {
-                    this.onBack()
-                })}
-                rightButton={rightButton}
+            title={title}
+            style={{backgroundColor: '#6495ed'}}
+            leftButton={ViewUtils.getLeftButton(()=> {
+            this.onBack()
+            })}
+            rightButton={rightButton}
             />
             <ScrollView>
-                {this.renderView()}
+            {this.renderView()}
             </ScrollView>
+            {/*<Text>aaa</Text>*/}
         </View>
     }
 }
